@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Price of Unity, game console</title>
+<meta name="description" content="Game console for The Price of Unity, a classroom simulation built on the United Ireland fiscal model.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">Immersive Software Engineering · classroom simulation</div>
+    <h1>The Price of Unity</h1>
+  </div>
+  <div class="status" id="status"></div>
+</header>
+
+<nav role="tablist" id="tabs">
+  <button role="tab" data-tab="setup">Setup</button>
+  <button role="tab" data-tab="act1">Act One</button>
+  <button role="tab" data-tab="act2">Act Two</button>
+  <button role="tab" data-tab="score">Scoreboard</button>
+  <button role="tab" data-tab="log">Change log</button>
+  <button role="tab" data-tab="debrief">Debrief</button>
+</nav>
+
+<div id="verify" class="banner"></div>
+
+<!-- ============================== SETUP -->
+<section data-panel="setup">
+  <div class="cols">
+    <div class="card">
+      <h2>Before the class</h2>
+      <p>The Simulator desk runs this page on the shared screen. Every number comes from the same model as the Unity simulator at stephenkinsella.net/unity, version 3.14.</p>
+      <div class="field">
+        <label for="classSize">Class size</label>
+        <select id="classSize"><option value="30">30 students</option><option value="33">33 students</option><option value="36">36 students</option></select>
+      </div>
+      <div class="tablewrap"><table id="teamTable"></table></div>
+    </div>
+    <div class="card">
+      <h2>The hidden harmonisation case</h2>
+      <p>Nobody in the room should see this case until the end of Turn 1. Either let the page draw it, or enter the card the lecturer drew from the sealed deck.</p>
+      <div class="btns">
+        <button class="act" id="drawCase">Draw the case at random</button>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label for="enterCase">Or enter the card drawn by hand</label>
+        <div class="inline">
+          <select id="enterCase"><option value="">Choose a card</option><option value="upper">Card 1</option><option value="middle">Card 2</option><option value="rateBased">Card 3</option><option value="lower">Card 4</option></select>
+          <button class="sec" id="setCase">Set and hide</button>
+        </div>
+        <span class="hint">Card numbers match the printed case cards. The page never shows which case a number stands for.</span>
+      </div>
+      <p id="caseState" class="hiddencase"></p>
+    </div>
+    <div class="card">
+      <h2>Game file</h2>
+      <p>The page saves the game in this browser as you go. Export a copy at the break and at the end, so nothing is lost if the laptop changes.</p>
+      <div class="btns">
+        <button class="sec" id="exportGame">Export game file</button>
+        <label class="sec" style="display:inline-block">Import game file <input type="file" id="importGame" accept="application/json" hidden></label>
+        <button class="sec" id="newGame">Start a new game</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT ONE -->
+<section data-panel="act1" hidden>
+  <div class="cols2">
+    <div>
+      <div class="card">
+        <h2>Step 1, the prospectus</h2>
+        <div class="field">
+          <label for="design">Design</label>
+          <select id="design"></select>
+          <span class="hint" id="designNote"></span>
+        </div>
+        <div class="field">
+          <label for="unityYear">Year of unity</label>
+          <input type="number" id="unityYear" min="2025" max="2060" step="1">
+          <span class="hint">Recorded for the scoreboard. This model counts years from unity, so the year does not change the figures.</span>
+        </div>
+        <label class="check"><input type="checkbox" id="holdDeficit"> Hold the State's deficit share of output steady until unity</label>
+        <p class="hint" style="margin-top:4px">Recorded only. The public model has no setting for this yet.</p>
+        <div class="field">
+          <label for="guarantees">Guarantees offered to people who want to stay British</label>
+          <input type="number" id="guarantees" min="0" max="10" step="1">
+        </div>
+        <div class="field">
+          <label for="promises">Other promises, one per line</label>
+          <textarea id="promises" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Campaign card</h2>
+        <p class="muted small">Draw one card just before the hearing.</p>
+        <div id="campaignCard"></div>
+        <div class="btns"><button class="sec" id="drawCampaign">Draw a campaign card</button></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Cost range for the hearing</h2>
+        <p>The Fiscal Council presents these runs. They use the upper and lower cases, so they reveal nothing about the hidden case.</p>
+        <div class="inline field">
+          <label for="costGrowth" class="lab">Northern Ireland growth for the costing</label>
+          <select id="costGrowth"><option value="2">2.0%, the assumed rate</option><option value="1.3">1.3%, the 2000 to 2024 average</option></select>
+        </div>
+        <div class="tablewrap"><table id="costTable"></table></div>
+        <p class="hint">Cost is the yearly cost to the Exchequer in constant 2023 euros. Debt is total State debt as a share of GNI* plus Northern Ireland output.</p>
+      </div>
+      <div class="card">
+        <h2>Step 3, the polls</h2>
+        <p id="pollIntro" class="muted small"></p>
+        <div class="cols">
+          <div>
+            <h3>Northern Ireland</h3>
+            <div class="inline"><label>Yes <input type="number" id="niYes" min="0" style="width:80px"></label><label>No <input type="number" id="niNo" min="0" style="width:80px"></label></div>
+          </div>
+          <div>
+            <h3>Republic</h3>
+            <div class="inline"><label>Yes <input type="number" id="roiYes" min="0" style="width:80px"></label><label>No <input type="number" id="roiNo" min="0" style="width:80px"></label></div>
+          </div>
+        </div>
+        <div class="btns"><button class="act" id="recordPoll">Record the polls</button></div>
+        <div id="pollResult" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
+        <h2>Step 4, the terms</h2>
+        <div class="field">
+          <span class="lab">Deal with the UK on accrued pensions and debt interest</span>
+          <label class="check"><input type="radio" name="deal" value="fav"> Favourable, the UK keeps both</label>
+          <label class="check"><input type="radio" name="deal" value="adv"> Adverse, Dublin takes both. This applies if talks end without agreement</label>
+        </div>
+        <label class="check"><input type="checkbox" id="euLine"> EU budget line included, meaning Ireland's EU contribution on Northern Ireland output and CAP direct payments</label>
+        <div class="field" style="margin-top:10px">
+          <label for="promiseGap">Prospectus promises the final terms do not deliver</label>
+          <input type="number" id="promiseGap" min="0" max="5" step="1" style="width:90px">
+          <span class="hint">If this is above zero, the governments lose 1 support point at the start of Act Two.</span>
+        </div>
+        <div class="btns"><button class="act" id="startAct2">Start Act Two</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT TWO -->
+<section data-panel="act2" hidden>
+  <div class="card">
+    <div class="inline" style="justify-content:space-between">
+      <h2 id="turnTitle" style="margin:0"></h2>
+      <div class="timer">
+        <div class="clock" id="clock">4:00</div>
+        <div>
+          <div class="phases" id="phases"></div>
+          <div class="btns"><button class="sec" id="timerGo">Start</button><button class="sec" id="timerNext">Next phase</button><button class="sec" id="timerReset">Reset clock</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cols2">
+    <div>
+      <div class="card">
+        <h2>Turn decisions</h2>
+        <div class="field">
+          <label for="growthBand">Growth plan for Northern Ireland</label>
+          <select id="growthBand">
+            <option value="none">No plan, unfunded, or not signed by both Northern teams, 1.3%</option>
+            <option value="credible">Credible plan with funding, signed by both, 2.0%</option>
+            <option value="ambitious">Ambitious plan with funding and EU support, 3.0% proposed</option>
+            <option value="council">Higher rate accepted in writing by the Fiscal Council</option>
+          </select>
+        </div>
+        <div class="field" id="councilField" hidden>
+          <label for="councilRate">Rate accepted by the Fiscal Council, %</label>
+          <input type="number" id="councilRate" min="0" max="7" step="0.1">
+        </div>
+        <div class="field">
+          <label for="eventAdj">Growth change from event cards, points</label>
+          <input type="number" id="eventAdj" min="-3" max="3" step="0.5">
+          <span class="hint">Carries into later turns until changed. For example, enter minus 0.5 after a productivity stall.</span>
+        </div>
+        <label class="check"><input type="checkbox" id="boycott"> The pro-union campaign boycotts the institutions this turn</label>
+        <div class="field" style="margin-top:10px">
+          <label for="broken">Promises broken this turn</label>
+          <input type="number" id="broken" min="0" max="10" step="1" style="width:90px">
+        </div>
+        <div class="field">
+          <span class="lab">Terms from Act One</span>
+          <label class="check"><input type="radio" name="deal2" value="fav"> Favourable deal</label>
+          <label class="check"><input type="radio" name="deal2" value="adv"> Adverse deal</label>
+          <label class="check"><input type="checkbox" id="euLine2"> EU budget line included</label>
+        </div>
+        <div class="btns"><button class="act" id="runTurn">Run the model</button></div>
+      </div>
+      <div class="card">
+        <h2>End of turn</h2>
+        <div class="field">
+          <span class="lab">Citizens' Panel vote on support</span>
+          <div class="inline">
+            <label class="check"><input type="radio" name="panel" value="1"> Up one</label>
+            <label class="check"><input type="radio" name="panel" value="0"> No change</label>
+            <label class="check"><input type="radio" name="panel" value="-1"> Down one</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="eventSupport">Support change from the event card</label>
+          <input type="number" id="eventSupport" min="-3" max="3" step="1" style="width:90px">
+        </div>
+        <div id="eventCard"></div>
+        <div class="btns">
+          <button class="sec" id="drawEvent">Draw an event card</button>
+          <button class="act" id="recordTurn">Record the turn</button>
+        </div>
+        <div class="btns"><button class="sec" id="revealCase">Reveal the harmonisation case</button></div>
+        <p id="revealText"></p>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="stats" id="turnStats"></div>
+        <div id="turnChecks" class="inline" style="margin-bottom:12px"></div>
+        <figure>
+          <figcaption>Yearly cost to the Exchequer, € billion, 2023 prices</figcaption>
+          <div class="legend"><span><i style="border-color:var(--accent)"></i>Recorded history</span><span><i style="border-color:var(--accent);border-top-style:dashed"></i>This run</span><span><i style="border-color:var(--limit);border-top-style:dotted"></i>Burden limit, 2% of GNI*</span></div>
+          <svg class="chart" id="costChart" viewBox="0 0 640 260" role="img" aria-label="Yearly cost against the burden limit"></svg>
+        </figure>
+        <figure>
+          <figcaption>Total State debt, % of GNI* plus Northern Ireland output</figcaption>
+          <div class="legend"><span><i style="border-color:var(--debt)"></i>Recorded history</span><span><i style="border-color:var(--debt);border-top-style:dashed"></i>This run</span><span><i style="border-color:var(--limit);border-top-style:dotted"></i>80% ceiling</span></div>
+          <svg class="chart" id="debtChart" viewBox="0 0 640 260" role="img" aria-label="Total debt against the 80% ceiling"></svg>
+        </figure>
+        <p class="note">The model works out all 25 years from one set of settings. Each turn reruns the whole path and shows years up to the end of the turn, so earlier years can shift a little. The solid line keeps what each turn showed, as history.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== SCOREBOARD -->
+<section data-panel="score" hidden>
+  <div class="card"><h2>Act One record</h2><div class="tablewrap"><table id="act1Table"></table></div></div>
+  <div class="card"><h2>Act Two scoreboard</h2><div class="tablewrap"><table id="act2Table"></table></div></div>
+  <div class="card">
+    <h2>Points</h2>
+    <p class="muted small">Points from the polls, fiscal checks and support meter fill in from the game. Enter private objectives and brief marks by hand.</p>
+    <div class="tablewrap"><table id="pointsTable"></table></div>
+  </div>
+</section>
+
+<!-- ============================== LOG -->
+<section data-panel="log" hidden>
+  <div class="card">
+    <h2>Simulator desk change log</h2>
+    <p>Every setting change is logged here with the turn and time. Fill in which decision sheet asked for it, so every number traces back to a written decision.</p>
+    <div class="btns" style="margin-bottom:10px"><button class="sec" id="logCsv">Download as CSV</button></div>
+    <div class="tablewrap"><table id="logTable"></table></div>
+  </div>
+</section>
+
+<!-- ============================== DEBRIEF -->
+<section data-panel="debrief" hidden>
+  <div class="card">
+    <h2>Sensitivity test</h2>
+    <p>Starting from the final settings, each row changes one input and shows how far year 25 total debt moves. The Simulator desk presents this in the debrief.</p>
+    <div class="tablewrap"><table id="sensTable"></table></div>
+  </div>
+  <div class="card">
+    <h2>Final path, all 25 years</h2>
+    <div class="btns" style="margin-bottom:10px"><button class="sec" id="pathCsv">Download as CSV</button></div>
+    <div class="tablewrap"><table id="pathTable"></table></div>
+  </div>
+</section>
+
+<footer>
+  Figures are illustrative scenarios from the United Ireland fiscal model, version 3.14, in constant 2023 euros. They are not forecasts. The growth bands above 2%, the support meter and the event cards are classroom rules, not model results. Model by Stephen Kinsella, University of Limerick.
+</footer>
+</div>
+
+<script src="engine.js"></script>
+<script src="paper_values.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

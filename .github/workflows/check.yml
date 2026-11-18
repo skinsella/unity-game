@@ -1,0 +1,16 @@
+name: Model check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Engine reproduces paper version 3.14
+        run: node tests/check_engine.mjs
