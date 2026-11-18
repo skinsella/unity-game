@@ -2,6 +2,8 @@
 
 This is the console for The Price of Unity, a three-hour classroom simulation for the Immersive Software Engineering programme at the University of Limerick. The Simulator desk runs it on the shared screen while eight teams take Ireland from a unity vote through the first 25 years after unity.
 
+The console is live at https://stephenkinsella.net/unity-game/.
+
 Every figure comes from the United Ireland fiscal model, version 3.14, the same model behind the simulator at stephenkinsella.net/unity. The figures are illustrative scenarios in constant 2023 euros, not forecasts.
 
 ## What the console does
