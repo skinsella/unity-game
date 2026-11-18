@@ -65,9 +65,16 @@ const fresh = () => ({
   log: [], tab: 'setup',
 });
 let S = load() || fresh();
+const ROOM = new URLSearchParams(location.search).get('view') === 'room';
+let channel = null;
+try { channel = new BroadcastChannel('price-of-unity'); } catch (e) { /* older browser, the room screen then follows saved state only */ }
 
 function load() { try { const raw = localStorage.getItem(STORE); return raw ? {...fresh(), ...JSON.parse(raw)} : null; } catch (e) { return null; } }
-function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) { /* storage unavailable, export the game file instead */ } }
+function save() {
+  if (ROOM) return;
+  try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) { /* storage unavailable, export the game file instead */ }
+  if (channel) channel.postMessage({type: 'state', state: S});
+}
 
 const turnNo = () => S.act2Started ? Math.min(S.turns.length + 1, 3) : 0;
 const gameOver = () => S.turns.length >= 3;
@@ -85,6 +92,13 @@ function run(caseKey, design, growth, fav, euOn) {
   const p = policy(design, growth, fav);
   const rows = simulate(p, s);
   return {rows, checks: checks(rows), need: growthNeeded(p, s, repaid)};
+}
+// Range across all four harmonisation cases for one set of decisions, year by year.
+function fan(design, growth, fav, euOn) {
+  const runs = CASE_KEYS.map(c => run(c, design, growth, fav, euOn).rows);
+  const band = key => runs[0].map((_, i) => { const v = runs.map(r => r[i][key]); return [i + 1, Math.min(...v), Math.max(...v)]; });
+  return {cost: band('cost'), debt: band('totalDebtPct'), burden: runs[0].map(r => [r.year, r.burdenLimit]),
+          end: CASE_KEYS.map((c, i) => [c, runs[i][24].totalDebtPct, Math.max(...runs[i].map(r => r.totalDebtPct))])};
 }
 function turnGrowth() {
   const base = S.growthBand === 'council' ? +S.councilRate : BANDS[S.growthBand];
@@ -122,7 +136,8 @@ function verify() {
 // ------------------------------------------------------------------ charts
 function chart(svg, opts) {
   const W = 640, H = 260, L = 46, R = 14, T = 14, B = 30;
-  const all = [...opts.series.flatMap(s => s.pts.map(p => p[1])), ...opts.limit.map(p => p[1]), 0];
+  const bands = opts.bands || [];
+  const all = [...opts.series.flatMap(s => s.pts.map(p => p[1])), ...opts.limit.map(p => p[1]), ...bands.flatMap(b => b.pts.flatMap(p => [p[1], p[2]])), 0];
   let lo = Math.min(...all), hi = Math.max(...all);
   const raw = (hi - lo || 1)/5, mag = Math.pow(10, Math.floor(Math.log10(raw)));
   const step = [1, 2, 2.5, 5, 10].map(m => m*mag).find(s => s >= raw);
@@ -134,10 +149,15 @@ function chart(svg, opts) {
     g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--rule)" stroke-width="${Math.abs(v) < 1e-9 ? 1.2 : .7}"/>`;
     g += `<text x="${L - 6}" y="${y(v) + 3.5}" text-anchor="end">${+v.toFixed(2)}${opts.unit}</text>`;
   }
-  [8.5, 16.5].forEach((b, i) => { g += `<line x1="${x(b)}" x2="${x(b)}" y1="${T}" y2="${H - B}" stroke="var(--rule)" stroke-dasharray="2 3"/>`; });
-  ['Turn 1', 'Turn 2', 'Turn 3'].forEach((t, i) => { g += `<text x="${x([4.5, 12.5, 21][i])}" y="${T + 10}" text-anchor="middle">${t}</text>`; });
+  if (opts.turns !== false) [8.5, 16.5].forEach((b, i) => { g += `<line x1="${x(b)}" x2="${x(b)}" y1="${T}" y2="${H - B}" stroke="var(--rule)" stroke-dasharray="2 3"/>`; });
+  if (opts.turns !== false) ['Turn 1', 'Turn 2', 'Turn 3'].forEach((t, i) => { g += `<text x="${x([4.5, 12.5, 21][i])}" y="${T + 10}" text-anchor="middle">${t}</text>`; });
   [1, 5, 10, 15, 20, 25].forEach(t => g += `<text x="${x(t)}" y="${H - 10}" text-anchor="middle">${t}</text>`);
   const path = pts => pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join('');
+  for (const b of bands) if (b.pts.length) {
+    const top = b.pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)},${y(p[2]).toFixed(1)}`).join('');
+    const bot = b.pts.slice().reverse().map(p => `L${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join('');
+    g += `<path d="${top}${bot}Z" fill="${b.fill}" stroke="none"/>`;
+  }
   if (opts.limit.length) g += `<path d="${path(opts.limit)}" fill="none" stroke="var(--limit)" stroke-width="1.3" stroke-dasharray="1.5 3.5"/>`;
   for (const s of opts.series) if (s.pts.length) {
     g += `<path d="${path(s.pts)}" fill="none" stroke="${s.color}" stroke-width="${s.w || 2.6}" ${s.dash ? 'stroke-dasharray="6 4"' : ''} opacity="${s.op || 1}" stroke-linejoin="round"/>`;
@@ -147,6 +167,7 @@ function chart(svg, opts) {
 
 // ------------------------------------------------------------------ rendering
 function render() {
+  if (ROOM) { renderStatus(); renderAct1(); renderScore(); renderRoom(); return; }
   // tabs
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === S.tab)));
   document.querySelectorAll('section[data-panel]').forEach(p => p.hidden = p.dataset.panel !== S.tab);
@@ -161,6 +182,52 @@ function renderStatus() {
     `<span class="chip">Year of unity <b>${S.unityYear}</b></span>` +
     `<span class="chip">Harmonisation case, ${caseText}</span>` +
     (S.act2Started ? `<span class="chip">Support <b>${S.support}</b> of 10<span class="meter">${meter}</span></span>` : '');
+}
+
+function legend(items) {
+  return '<div class="legend">' + items.map(([style, label]) => `<span><i ${style}></i>${label}</span>`).join('') + '</div>';
+}
+function renderRoom() {
+  document.querySelectorAll('section[data-panel]').forEach(p => p.hidden = p.dataset.panel !== 'room');
+  const body = $('roomBody'), act2 = S.act2Started;
+  $('roomTimer').hidden = !act2 || gameOver();
+  if (!act2) {
+    $('roomTitle').textContent = S.polls.some(p => p.passed) ? 'Act One, unity approved' : 'Act One, the lead-up';
+    const last = S.polls[S.polls.length - 1];
+    body.innerHTML = `<div class="stats">
+        <div class="stat"><div class="lab">Design in the prospectus</div><div class="val">${esc(FORMS[S.design].name)}</div></div>
+        <div class="stat"><div class="lab">Year of unity</div><div class="val">${S.unityYear}</div></div>
+        <div class="stat"><div class="lab">Northern Ireland poll</div><div class="val">${last ? `${last.niYes} to ${last.niNo}` : 'not held'}</div></div>
+        <div class="stat"><div class="lab">Republic poll</div><div class="val">${last ? `${last.roiYes} to ${last.roiNo}` : 'not held'}</div></div></div>
+      <div class="roomgrid">
+        <div class="card"><h2>Cost range for the hearing, at ${fmt(+S.costGrowth)}% growth</h2><div class="tablewrap"><table>${costTableHtml}</table></div></div>
+        <div class="card"><figure><figcaption>Total State debt across all four harmonisation cases, %</figcaption>
+          ${legend([['class="band" style="background:var(--accent-band)"', 'Favourable deal'], ['class="band" style="background:var(--debt-band)"', 'Adverse deal'], ['style="border-color:var(--limit);border-top-style:dotted"', '80% ceiling']])}
+          <svg class="chart" id="roomFan" viewBox="0 0 640 260"></svg></figure>
+          ${S.campaign === null ? '' : card('Campaign card', CAMPAIGN[S.campaign][0], CAMPAIGN[S.campaign][1])}</div>
+      </div>`;
+    drawActOneFan($('roomFan'));
+    return;
+  }
+  if (gameOver()) {
+    $('roomTitle').textContent = 'The debrief';
+    body.innerHTML = `<div class="card"><h2>Act Two scoreboard</h2><div class="tablewrap"><table>${act2TableHtml}</table></div></div>`;
+    return;
+  }
+  const v = act2View();
+  $('roomTitle').textContent = `Turn ${v.n}, years ${TURN_START[v.n - 1]} to ${TURN_END[v.n - 1]}`;
+  const ev = S.pendingEvent === null ? '' : card('Event card, ' + EVENTS[S.pendingEvent][0], EVENTS[S.pendingEvent][1], EVENTS[S.pendingEvent][2]);
+  const reveal = S.revealed ? `<p><span class="pill pass">Revealed</span> The ${esc(CASE_LABELS[S.hiddenCase].toLowerCase())} case. ${esc(CASE_NOTES[S.hiddenCase])}</p>` : '';
+  body.innerHTML = `<div class="stats">${statsHtml(v)}</div><div class="inline" style="margin-bottom:14px">${checksHtml(v)}</div>${reveal}
+    <div class="roomgrid">
+      <figure class="card"><figcaption>Yearly cost to the Exchequer, € billion, 2023 prices</figcaption>
+        ${legend([...(v.fan ? [['class="band" style="background:var(--accent-band)"', 'Range across the four cases']] : []), ['style="border-color:var(--accent)"', 'Recorded history'], ['style="border-color:var(--accent);border-top-style:dashed"', 'This run'], ['style="border-color:var(--limit);border-top-style:dotted"', 'Burden limit']])}
+        <svg class="chart" id="roomCost" viewBox="0 0 640 260"></svg></figure>
+      <figure class="card"><figcaption>Total State debt, % of GNI* plus Northern Ireland output</figcaption>
+        ${legend([...(v.fan ? [['class="band" style="background:var(--debt-band)"', 'Range across the four cases']] : []), ['style="border-color:var(--debt)"', 'Recorded history'], ['style="border-color:var(--debt);border-top-style:dashed"', 'This run'], ['style="border-color:var(--limit);border-top-style:dotted"', '80% ceiling']])}
+        <svg class="chart" id="roomDebt" viewBox="0 0 640 260"></svg></figure>
+    </div>${ev}`;
+  drawAct2Charts($('roomCost'), $('roomDebt'), v);
 }
 
 function renderSetup() {
@@ -191,7 +258,9 @@ function renderAct1() {
     const passed = [r.checks.debt, r.checks.burden, r.checks.falling].filter(Boolean).length;
     rows.push(`<tr><td>${CASE_LABELS[c]} case</td><td>${fav ? 'Favourable' : 'Adverse'}</td><td class="num">${fmt(r.rows[0].cost)}</td><td class="num">${fmt(last.cost)}</td><td class="num">${fmt(peak)}%</td><td class="num">${passed} of 3</td><td class="num">${r.need === null ? 'above 7%' : fmt(r.need) + '%'}</td></tr>`);
   }
-  $('costTable').innerHTML = '<tr><th>Case</th><th>Deal</th><th class="num">Year 1 cost, €bn</th><th class="num">Year 25 cost, €bn</th><th class="num">Peak debt</th><th class="num">Checks held</th><th class="num">Growth needed to repay</th></tr>' + rows.join('');
+  costTableHtml = '<tr><th>Case</th><th>Deal</th><th class="num">Year 1 cost, €bn</th><th class="num">Year 25 cost, €bn</th><th class="num">Peak debt</th><th class="num">Checks held</th><th class="num">Growth needed to repay</th></tr>' + rows.join('');
+  $('costTable').innerHTML = costTableHtml;
+  drawActOneFan($('fanChart'));
 
   $('campaignCard').innerHTML = S.campaign === null ? '' : card('Campaign card', CAMPAIGN[S.campaign][0], CAMPAIGN[S.campaign][1]);
   $('drawCampaign').disabled = S.campaign !== null;
@@ -212,6 +281,12 @@ function renderAct1() {
   $('startAct2').title = !S.hiddenCase ? 'Set the hidden case in Setup first' : '';
 }
 
+let costTableHtml = '';
+function drawActOneFan(svg) {
+  const fv = fan(S.design, +S.costGrowth, true, S.euLine), ad = fan(S.design, +S.costGrowth, false, S.euLine);
+  chart(svg, {unit: '%', series: [], turns: false, limit: [[1, 80], [25, 80]],
+    bands: [{pts: ad.debt, fill: 'var(--debt-band)'}, {pts: fv.debt, fill: 'var(--accent-band)'}]});
+}
 const card = (kind, title, text) => `<div class="eventcard"><div class="kind">${esc(kind)}</div><div class="title">${esc(title)}</div><div>${esc(text)}</div></div>`;
 
 function renderAct2() {
@@ -233,41 +308,59 @@ function renderAct2() {
   $('revealCase').disabled = S.revealed || S.turns.length < 1;
   $('revealText').innerHTML = S.revealed ? `<span class="pill pass">Revealed</span> The ${esc(CASE_LABELS[S.hiddenCase].toLowerCase())} case. ${esc(CASE_NOTES[S.hiddenCase])}` : '';
 
-  // results
+  const v = act2View();
+  $('turnStats').innerHTML = statsHtml(v);
+  $('turnChecks').innerHTML = checksHtml(v);
+  document.querySelectorAll('.fanleg').forEach(el => el.hidden = !v.fan);
+  drawAct2Charts($('costChart'), $('debtChart'), v);
+}
+
+function act2View() {
+  const n = turnNo(), live = S.act2Started && !gameOver();
   const lr = S.lastRun && S.lastRun.turn === n && live ? S.lastRun : null;
   const end = lr ? TURN_END[n - 1] : 0;
   const shown = lr ? lr.rows.filter(r => r.year >= TURN_START[n - 1] && r.year <= end) : [];
-  const hist = history(shown);
-  const ck = checksToDate(hist);
-  const lastRow = hist[hist.length - 1];
-  const g = lr ? lr.growth : (S.turns.length ? S.turns[S.turns.length - 1].growth : turnGrowth());
-  const need = lr ? lr.need : (S.turns.length ? S.turns[S.turns.length - 1].need : null);
-  $('turnStats').innerHTML = [
+  const hist = history(shown), recorded = history();
+  const last = S.turns[S.turns.length - 1];
+  // The fan is shown only while no figures from the hidden case are on screen, so it cannot give the case away.
+  const showFan = S.act2Started && live && !S.revealed && S.turns.length === 0 && !lr;
+  return {n, live, lr, hist, recorded, ck: checksToDate(hist), lastRow: hist[hist.length - 1],
+    runPts: lr ? lr.rows.filter(r => r.year <= end) : [],
+    g: lr ? lr.growth : (last ? last.growth : turnGrowth()), need: lr ? lr.need : (last ? last.need : null),
+    fan: showFan ? fan(S.design, turnGrowth(), S.deal === 'fav', S.euLine) : null};
+}
+function statsHtml(v) {
+  return [
     ['Design', FORMS[S.design].name],
-    ['Northern Ireland growth', fmt(g) + '%'],
-    ['Yearly cost, latest year', lastRow ? '€' + fmt(lastRow.cost) + 'bn' : 'not run'],
-    ['Total State debt', lastRow ? fmt(lastRow.totalDebtPct) + '%' : 'not run'],
-    ['Transition borrowing', lastRow ? '€' + fmt(lastRow.borrowing) + 'bn' : 'not run'],
-    ['Growth needed to repay in 25 years', need === null ? (lastRow ? 'above 7%' : 'not run') : fmt(need) + '%'],
-  ].map(([l, v]) => `<div class="stat"><div class="lab">${l}</div><div class="val">${esc(v)}</div></div>`).join('');
-  $('turnChecks').innerHTML = hist.length ? [
+    ['Northern Ireland growth', fmt(v.g) + '%'],
+    ['Yearly cost, latest year', v.lastRow ? '€' + fmt(v.lastRow.cost) + 'bn' : 'not run'],
+    ['Total State debt', v.lastRow ? fmt(v.lastRow.totalDebtPct) + '%' : 'not run'],
+    ['Transition borrowing', v.lastRow ? '€' + fmt(v.lastRow.borrowing) + 'bn' : 'not run'],
+    ['Growth needed to repay in 25 years', v.need === null ? (v.lastRow ? 'above 7%' : 'not run') : fmt(v.need) + '%'],
+  ].map(([l, x]) => `<div class="stat"><div class="lab">${l}</div><div class="val">${esc(x)}</div></div>`).join('');
+}
+function checksHtml(v) {
+  const ck = v.ck;
+  return v.hist.length ? [
     ['Debt check', ck.debt, ck.debt ? 'below 80% so far' : `crossed 80% in year ${ck.firstDebtFail}`],
     ['Burden check', ck.burden, ck.burden ? 'cost within 2% of GNI* so far' : 'cost above 2% of GNI*'],
     ['Falling check', ck.falling, ck.falling === null ? 'tested in years 20 to 25' : ck.falling ? 'cost falls from year 20' : 'cost does not fall from year 20'],
   ].map(([nm, ok, why]) => `<span class="pill ${ok === null ? 'wait' : ok ? 'pass' : 'fail'}">${nm}, ${why}</span>`).join('') : '';
-
-  const recorded = history();
-  const runPts = lr ? lr.rows.filter(r => r.year <= end) : [];
-  chart($('costChart'), {unit: '', series: [
-      {pts: runPts.map(r => [r.year, r.cost]), color: 'var(--accent)', dash: true, w: 2, op: .8},
-      {pts: recorded.map(r => [r.year, r.cost]), color: 'var(--accent)'}],
-    limit: (hist.length ? hist : []).map(r => [r.year, r.burdenLimit])});
-  chart($('debtChart'), {unit: '%', series: [
-      {pts: runPts.map(r => [r.year, r.totalDebtPct]), color: 'var(--debt)', dash: true, w: 2, op: .8},
-      {pts: recorded.map(r => [r.year, r.totalDebtPct]), color: 'var(--debt)'}],
+}
+function drawAct2Charts(costSvg, debtSvg, v) {
+  chart(costSvg, {unit: '', series: [
+      {pts: v.runPts.map(r => [r.year, r.cost]), color: 'var(--accent)', dash: true, w: 2, op: .8},
+      {pts: v.recorded.map(r => [r.year, r.cost]), color: 'var(--accent)'}],
+    bands: v.fan ? [{pts: v.fan.cost, fill: 'var(--accent-band)'}] : [],
+    limit: v.hist.length ? v.hist.map(r => [r.year, r.burdenLimit]) : (v.fan ? v.fan.burden : [])});
+  chart(debtSvg, {unit: '%', series: [
+      {pts: v.runPts.map(r => [r.year, r.totalDebtPct]), color: 'var(--debt)', dash: true, w: 2, op: .8},
+      {pts: v.recorded.map(r => [r.year, r.totalDebtPct]), color: 'var(--debt)'}],
+    bands: v.fan ? [{pts: v.fan.debt, fill: 'var(--debt-band)'}] : [],
     limit: [[1, 80], [25, 80]]});
 }
 
+let act2TableHtml = '';
 function renderScore() {
   const p1 = S.polls[0], pLast = S.polls[S.polls.length - 1];
   const rec = [
@@ -284,11 +377,12 @@ function renderScore() {
   $('act1Table').innerHTML = '<tr><th>Item</th><th>Result</th></tr>' + rec.map(([a, b]) => `<tr><td>${a}</td><td>${esc(b)}</td></tr>`).join('');
 
   const pill = v => v === null ? '<span class="pill wait">later</span>' : `<span class="pill ${v ? 'pass' : 'fail'}">${v ? 'holds' : 'fails'}</span>`;
-  $('act2Table').innerHTML = '<tr><th>Turn</th><th>Years</th><th class="num">Growth</th><th class="num">Yearly cost at end, €bn</th><th class="num">State debt</th><th>Burden</th><th>Debt</th><th>Falling</th><th class="num">Support</th><th>Pro-union</th><th class="num">Promises broken</th><th>Event card</th></tr>' +
+  act2TableHtml = '<tr><th>Turn</th><th>Years</th><th class="num">Growth</th><th class="num">Yearly cost at end, €bn</th><th class="num">State debt</th><th>Burden</th><th>Debt</th><th>Falling</th><th class="num">Support</th><th>Pro-union</th><th class="num">Promises broken</th><th>Event card</th></tr>' +
     [0, 1, 2].map(i => { const t = S.turns[i];
       if (!t) return `<tr><td>${i + 1}</td><td>${TURN_START[i]} to ${TURN_END[i]}</td><td colspan="10" class="muted">not played yet</td></tr>`;
       const last = t.rows[t.rows.length - 1];
       return `<tr><td>${i + 1}</td><td>${TURN_START[i]} to ${TURN_END[i]}</td><td class="num">${fmt(t.growth)}%</td><td class="num">${fmt(last.cost)}</td><td class="num">${fmt(last.totalDebtPct)}%</td><td>${pill(t.checks.burden)}</td><td>${pill(t.checks.debt)}</td><td>${pill(t.checks.falling)}</td><td class="num">${t.support}</td><td>${t.boycott ? 'Out' : 'In'}</td><td class="num">${t.broken}</td><td>${t.event === null ? '' : esc(EVENTS[t.event][1])}</td></tr>`; }).join('');
+  $('act2Table').innerHTML = act2TableHtml;
 
   // points
   const first = S.polls[0];
@@ -355,6 +449,14 @@ function set(key, value, label, shown) {
 const yesNo = v => v ? 'Yes' : 'No';
 const dealName = v => v === 'fav' ? 'Favourable' : 'Adverse';
 
+$('openRoom').addEventListener('click', () => window.open(location.pathname + '?view=room', 'price-of-unity-room'));
+if (channel) channel.onmessage = e => {
+  const m = e.data || {};
+  if (ROOM && m.type === 'state') { S = {...fresh(), ...m.state}; render(); }
+  if (ROOM && m.type === 'timer') { timerView = m; drawRoomTimer(); }
+  if (!ROOM && m.type === 'hello') { save(); sendTimer(); }
+};
+window.addEventListener('storage', e => { if (ROOM && e.key === STORE) { const x = load(); if (x) { S = x; render(); } } });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { S.tab = b.dataset.tab; render(); } });
 $('classSize').addEventListener('change', e => { S.classSize = +e.target.value; render(); });
 
@@ -475,7 +577,16 @@ $('newGame').addEventListener('click', () => { if (confirm('Start a new game? Ex
 
 // ------------------------------------------------------------------ timer
 let phase = 0, left = PHASES[0][1]*60, ticking = null;
+let timerView = null;
+function sendTimer() { if (channel && !ROOM) channel.postMessage({type: 'timer', phase, left, running: !!ticking}); }
+function drawRoomTimer() {
+  if (!timerView) return;
+  const t = timerView;
+  $('roomClock').textContent = `${Math.floor(t.left/60)}:${String(t.left%60).padStart(2, '0')}`;
+  $('roomPhases').innerHTML = PHASES.map(([n, m], i) => `<span class="${i === t.phase ? 'now' : i < t.phase ? 'done' : ''}">${n}</span>`).join('');
+}
 function drawTimer() {
+  sendTimer();
   $('clock').textContent = `${Math.floor(left/60)}:${String(left%60).padStart(2, '0')}`;
   $('phases').innerHTML = PHASES.map(([n, m], i) => `<span class="${i === phase ? 'now' : i < phase ? 'done' : ''}">${n}, ${m} min</span>`).join('');
   $('timerGo').textContent = ticking ? 'Pause' : 'Start';
@@ -489,5 +600,6 @@ $('timerGo').addEventListener('click', () => {
 $('timerNext').addEventListener('click', () => { if (phase < PHASES.length - 1) { phase++; left = PHASES[phase][1]*60; drawTimer(); } });
 $('timerReset').addEventListener('click', resetTimer);
 
-verify(); drawTimer(); render();
+if (ROOM) { document.body.classList.add('room'); document.title = 'The Price of Unity, room screen'; timerView = {phase: 0, left: PHASES[0][1]*60}; drawRoomTimer(); render(); if (channel) channel.postMessage({type: 'hello'}); }
+else { verify(); drawTimer(); render(); }
 })();

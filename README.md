@@ -17,6 +17,16 @@ Every figure comes from the United Ireland fiscal model, version 3.14, the same 
 
 The page keeps the game in the browser as it goes. Export the game file at the break and at the end.
 
+## The room screen
+
+The button at the top opens a second window for the projector. It shows the turn, the clock, the charts, the event card and the scoreboard in large type, with no controls. It follows the desk window on the same laptop as each change is made, with no server.
+
+## The range across the four cases
+
+Nobody in the room knows which harmonisation case is true. In Act One the Fiscal Council's costing includes a shaded band for total debt across all four cases, on both deals.
+
+In Turn 1 the same band shows on the Act Two charts until the model is first run. It disappears once figures from the hidden case are on screen, so it cannot give the case away.
+
 ## What is model and what is game
 
 The model decides the costs, the debt path and the three fiscal checks. The design, the deal with the UK, the harmonisation case, Northern Ireland growth and the EU budget line all feed the model directly.
@@ -34,6 +44,12 @@ To update the engine, copy the new engine.js and the published values from the b
 ```
 node tests/check_engine.mjs
 ```
+
+## Using it without Wi-Fi
+
+offline/price_of_unity_offline.html is the whole console in one file, fonts included. Copy it to a USB stick and open it in any browser, and the room screen works from it too.
+
+Rebuild it after changing any page file with `python3 build_offline.py`. The check on every push fails if the offline copy is out of date.
 
 ## Running it locally
 

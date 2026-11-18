@@ -14,10 +14,10 @@
     <div class="eyebrow">Immersive Software Engineering · classroom simulation</div>
     <h1>The Price of Unity</h1>
   </div>
-  <div class="status" id="status"></div>
+  <div class="status"><div class="status" id="status"></div><button class="sec deskonly" id="openRoom">Open the room screen</button></div>
 </header>
 
-<nav role="tablist" id="tabs">
+<nav role="tablist" id="tabs" class="deskonly">
   <button role="tab" data-tab="setup">Setup</button>
   <button role="tab" data-tab="act1">Act One</button>
   <button role="tab" data-tab="act2">Act Two</button>
@@ -26,7 +26,7 @@
   <button role="tab" data-tab="debrief">Debrief</button>
 </nav>
 
-<div id="verify" class="banner"></div>
+<div id="verify" class="banner deskonly"></div>
 
 <!-- ============================== SETUP -->
 <section data-panel="setup">
@@ -112,6 +112,12 @@
         </div>
         <div class="tablewrap"><table id="costTable"></table></div>
         <p class="hint">Cost is the yearly cost to the Exchequer in constant 2023 euros. Debt is total State debt as a share of GNI* plus Northern Ireland output.</p>
+        <figure style="margin-top:14px">
+          <figcaption>Total State debt across all four harmonisation cases, %</figcaption>
+          <div class="legend"><span><i class="band" style="background:var(--accent-band)"></i>Favourable deal, range across the four cases</span><span><i class="band" style="background:var(--debt-band)"></i>Adverse deal, range across the four cases</span><span><i style="border-color:var(--limit);border-top-style:dotted"></i>80% ceiling</span></div>
+          <svg class="chart" id="fanChart" viewBox="0 0 640 260" role="img" aria-label="Range of total debt across the four harmonisation cases"></svg>
+          <p class="hint">Nobody knows which case is true. The shaded bands show how wide the uncertainty is for this prospectus at the chosen growth rate.</p>
+        </figure>
       </div>
       <div class="card">
         <h2>Step 3, the polls</h2>
@@ -226,14 +232,15 @@
         <div id="turnChecks" class="inline" style="margin-bottom:12px"></div>
         <figure>
           <figcaption>Yearly cost to the Exchequer, € billion, 2023 prices</figcaption>
-          <div class="legend"><span><i style="border-color:var(--accent)"></i>Recorded history</span><span><i style="border-color:var(--accent);border-top-style:dashed"></i>This run</span><span><i style="border-color:var(--limit);border-top-style:dotted"></i>Burden limit, 2% of GNI*</span></div>
+          <div class="legend"><span class="fanleg"><i class="band" style="background:var(--accent-band)"></i>Range across the four cases</span><span><i style="border-color:var(--accent)"></i>Recorded history</span><span><i style="border-color:var(--accent);border-top-style:dashed"></i>This run</span><span><i style="border-color:var(--limit);border-top-style:dotted"></i>Burden limit, 2% of GNI*</span></div>
           <svg class="chart" id="costChart" viewBox="0 0 640 260" role="img" aria-label="Yearly cost against the burden limit"></svg>
         </figure>
         <figure>
           <figcaption>Total State debt, % of GNI* plus Northern Ireland output</figcaption>
-          <div class="legend"><span><i style="border-color:var(--debt)"></i>Recorded history</span><span><i style="border-color:var(--debt);border-top-style:dashed"></i>This run</span><span><i style="border-color:var(--limit);border-top-style:dotted"></i>80% ceiling</span></div>
+          <div class="legend"><span class="fanleg"><i class="band" style="background:var(--debt-band)"></i>Range across the four cases</span><span><i style="border-color:var(--debt)"></i>Recorded history</span><span><i style="border-color:var(--debt);border-top-style:dashed"></i>This run</span><span><i style="border-color:var(--limit);border-top-style:dotted"></i>80% ceiling</span></div>
           <svg class="chart" id="debtChart" viewBox="0 0 640 260" role="img" aria-label="Total debt against the 80% ceiling"></svg>
         </figure>
+        <p class="note fanleg">Before the first run, the shaded band shows the range for these decisions across all four harmonisation cases. It disappears once the hidden case is on screen.</p>
         <p class="note">The model works out all 25 years from one set of settings. Each turn reruns the whole path and shows years up to the end of the turn, so earlier years can shift a little. The solid line keeps what each turn showed, as history.</p>
       </div>
     </div>
@@ -275,8 +282,18 @@
   </div>
 </section>
 
+<!-- ============================== ROOM SCREEN -->
+<section data-panel="room" hidden>
+  <div class="roomtop">
+    <h2 id="roomTitle"></h2>
+    <div class="timer" id="roomTimer"><div class="clock" id="roomClock"></div><div class="phases" id="roomPhases"></div></div>
+  </div>
+  <div id="roomBody"></div>
+</section>
+
 <footer>
   Figures are illustrative scenarios from the United Ireland fiscal model, version 3.14, in constant 2023 euros. They are not forecasts. The growth bands above 2%, the support meter and the event cards are classroom rules, not model results. Model by Stephen Kinsella, University of Limerick.
+  <span class="deskonly onlineonly"> <a href="offline/price_of_unity_offline.html" download>Download the offline copy</a> for use without Wi-Fi.</span>
 </footer>
 </div>
 

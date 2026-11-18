@@ -14,3 +14,5 @@ jobs:
           node-version: '22'
       - name: Engine reproduces paper version 3.14
         run: node tests/check_engine.mjs
+      - name: Offline copy matches the page
+        run: python3 build_offline.py --check

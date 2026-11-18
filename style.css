@@ -9,7 +9,7 @@
 :root {
   --bg: #f4f6f7; --surface: #ffffff; --ink: #14212c; --muted: #56636e; --rule: #d6dde2;
   --accent: #1d5b8e; --accent-soft: #e3edf6; --debt: #b9561a; --limit: #14212c;
-  --pass: #23744a; --pass-soft: #e2f2e8; --fail: #ad2a22; --fail-soft: #f8e3e1; --warn-soft: #fbf1dc; --warn: #8a5a00;
+  --pass: #23744a; --pass-soft: #e2f2e8; --fail: #ad2a22; --fail-soft: #f8e3e1; --warn-soft: #fbf1dc; --warn: #8a5a00; --accent-band: rgba(29,91,142,.16); --debt-band: rgba(185,86,26,.16);
   --display: "Newsreader", Georgia, "Times New Roman", serif;
   --body: "Public Sans", "Segoe UI", Helvetica, Arial, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
@@ -17,7 +17,7 @@
 @media (prefers-color-scheme: dark) { :root {
   --bg: #0f161c; --surface: #172129; --ink: #e6ecf0; --muted: #9aa8b3; --rule: #2a3742;
   --accent: #7db4e3; --accent-soft: #1d3346; --debt: #ec9a62; --limit: #e6ecf0;
-  --pass: #6fcf98; --pass-soft: #163325; --fail: #f08a82; --fail-soft: #3a1c1a; --warn-soft: #3a2f16; --warn: #f2c66d; color-scheme: dark } }
+  --pass: #6fcf98; --pass-soft: #163325; --fail: #f08a82; --fail-soft: #3a1c1a; --warn-soft: #3a2f16; --warn: #f2c66d; --accent-band: rgba(125,180,227,.2); --debt-band: rgba(236,154,98,.2); color-scheme: dark } }
 
 * { box-sizing: border-box }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body) }
@@ -111,4 +111,26 @@ svg.chart text { font: 11px var(--body); fill: var(--muted) }
 .hiddencase { font: 600 15px var(--mono); letter-spacing: .1em }
 footer { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 12.5px; color: var(--muted) }
 [hidden] { display: none !important }
+.legend i.band { width: 18px; height: 10px; border: 0; vertical-align: middle }
+a { color: var(--accent) }
+
+/* Room screen, shown on the projector */
+body.room .deskonly { display: none !important }
+body.room { font-size: 19px }
+body.room .wrap { max-width: 1600px }
+body.room h1 { font-size: 30px }
+body.room .roomtop { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; margin: 16px 0 }
+body.room .roomtop h2 { font-size: 34px; margin: 0 }
+body.room .clock { font-size: 64px }
+body.room .phases span { font-size: 15px }
+body.room .stat .lab { font-size: 15px }
+body.room .stat .val { font-size: 28px }
+body.room .pill { font-size: 15px; padding: 7px 11px }
+body.room svg.chart text { font-size: 13px }
+body.room figcaption { font-size: 18px }
+body.room table { font-size: 17px }
+body.room .roomgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px }
+@media (max-width: 1100px) { body.room .roomgrid { grid-template-columns: 1fr } }
+body.room .eventcard .title { font-size: 26px }
+body.room footer { font-size: 14px }
 @media print { nav, .btns, button { display: none !important } .card { break-inside: avoid } }
