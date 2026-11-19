@@ -304,6 +304,11 @@ body.room footer { font-size: 14px }
           <label class="check"><input type="radio" name="deal" value="adv"> Adverse, Dublin takes both. This applies if talks end without agreement</label>
         </div>
         <label class="check"><input type="checkbox" id="euLine"> EU budget line included, meaning Ireland's EU contribution on Northern Ireland output and CAP direct payments</label>
+        <div class="field" style="margin-top:12px">
+          <span class="lab">EU transfer to the Exchequer</span>
+          <div class="inline small">€<input type="number" data-eut="euTransfer" min="0" max="20" step="0.5" style="width:80px">bn a year, from year <input type="number" data-eut="euTransferStart" min="1" max="25" step="1" style="width:66px"> for <input type="number" data-eut="euTransferYears" min="0" max="25" step="1" style="width:66px"> years</div>
+          <span class="hint">In 2023 euros. Set to 0 for no transfer. This is a classroom setting, not an estimate of what the EU would pay.</span>
+        </div>
         <div class="field" style="margin-top:10px">
           <label for="promiseGap">Prospectus promises the final terms do not deliver</label>
           <input type="number" id="promiseGap" min="0" max="5" step="1" style="width:90px">
@@ -361,6 +366,7 @@ body.room footer { font-size: 14px }
           <label class="check"><input type="radio" name="deal2" value="fav"> Favourable deal</label>
           <label class="check"><input type="radio" name="deal2" value="adv"> Adverse deal</label>
           <label class="check"><input type="checkbox" id="euLine2"> EU budget line included</label>
+          <div class="inline small" style="margin-top:6px">EU transfer €<input type="number" data-eut="euTransfer" min="0" max="20" step="0.5" style="width:74px">bn a year, from year <input type="number" data-eut="euTransferStart" min="1" max="25" step="1" style="width:60px"> for <input type="number" data-eut="euTransferYears" min="0" max="25" step="1" style="width:60px"> years</div>
         </div>
         <div class="btns"><button class="act" id="runTurn">Run the model</button></div>
       </div>
@@ -464,12 +470,14 @@ body.room footer { font-size: 14px }
 </section>
 
 <footer>
-  Figures are illustrative scenarios from the United Ireland fiscal model, version 3.14, in constant 2023 euros. They are not forecasts. The growth bands above 2%, the support meter and the event cards are classroom rules, not model results. Model by Stephen Kinsella, University of Limerick.
+  Figures are illustrative scenarios from the United Ireland fiscal model, version 3.14, in constant 2023 euros. They are not forecasts. The growth bands above 2%, the EU transfer, the support meter and the event cards are classroom rules, not model results. Model by Stephen Kinsella, University of Limerick.
 </footer>
 </div>
 
 <script>
-// Copied unchanged from skinsella/ui, zerve/web/engine.js, commit 9fae9f3. Do not edit here. Copy again from the book repository and run tests/check_engine.mjs.
+// Copied from skinsella/ui, zerve/web/engine.js, commit 9fae9f3, with one addition for the game.
+// The addition is a time-limited EU transfer (euTransfer, euTransferStart, euTransferYears). It is zero by default, so the paper's numbers are unchanged.
+// Copy again from the book repository, keep the addition, and run tests/check_engine.mjs.
 // United Ireland fiscal model, version 3.14. JavaScript port of zerve/guided/02 to 06.
 // Checked against the Python notebook by tests/test_guided_model.py. Constant 2023 euros, billions.
 const FX_2023 = 0.86979;
@@ -569,8 +577,9 @@ function simulate(p, s, horizon = 25) {
     const euC = p.counterfactual ? 0 : s.euContributionRate/100*out;
     const euR = p.counterfactual ? 0 : s.euReceipts;
     const behaviour = p.counterfactual ? 0 : s.behaviourReceiptLoss/100*c.grossWelfare;
+    const tStart = s.euTransferStart || 1, euT = (p.counterfactual || t < tStart || t >= tStart + (s.euTransferYears || 0)) ? 0 : (s.euTransfer || 0);
     const primary = p.counterfactual ? (p.shared ? invest : 0)
-      : gap + c.harmonisation + invest + p.duplication - growthTax + euC - euR + behaviour;
+      : gap + c.harmonisation + invest + p.duplication - growthTax + euC - euR - euT + behaviour;
     const rate = s.realInterest + (prevPct === null ? 0 : s.riskPremiumSlope/100*Math.max(0, prevPct - s.riskPremiumThreshold));
     const interest = debt*rate/100, cost = primary + interest;
     debt = Math.max(0, debt + cost); cum += cost;
@@ -578,7 +587,7 @@ function simulate(p, s, horizon = 25) {
     const income = neutral ? cal.gni : cal.gni + out;
     prevPct = 100*(DEBT_RATIOS[cal.debtYear]/100*cal.gni + ctDebt + debt)/income;
     rows.push({year: t, cost, primary, interest, rate, gap, harmonisation: c.harmonisation, investment: invest,
-               administration: p.counterfactual ? 0 : p.duplication, growthTax, euContribution: euC, euReceipts: euR, behaviour, income, republicGni: cal.gni, niOutput: out, ctDebt, borrowing: debt, cumulative: cum, totalDebtPct: prevPct,
+               administration: p.counterfactual ? 0 : p.duplication, growthTax, euContribution: euC, euReceipts: euR, euTransfer: euT, behaviour, income, republicGni: cal.gni, niOutput: out, ctDebt, borrowing: debt, cumulative: cum, totalDebtPct: prevPct,
                costPctGni: 100*cost/cal.gni, burdenLimit: 0.02*cal.gni, costPerResident: cost*1e9/c.roiPopulation});
   }
   return rows;
@@ -3050,6 +3059,7 @@ const fresh = () => ({
   stage: 'setup', act2Started: false, support: 5, govFell: null,
   growthBand: 'credible', councilRate: 3.5, eventAdj: 0, boycott: false, broken: 0,
   panel: null, eventSupport: 0, pendingEvent: null, eventsDrawn: [],
+  euTransfer: 0, euTransferStart: 1, euTransferYears: 10,
   turns: [], lastRun: null,
   points: {objective: {}, brief: {}, guaranteesKept: false},
   log: [], tab: 'setup', voteTopic: null,
@@ -3079,6 +3089,7 @@ function logChange(setting, oldV, newV, results = '') {
 function run(caseKey, design, growth, fav, euOn) {
   const s = {...paperSettings(caseKey)};
   if (!euOn) { s.euContributionRate = 0; s.euReceipts = 0; }
+  s.euTransfer = +S.euTransfer || 0; s.euTransferStart = +S.euTransferStart || 1; s.euTransferYears = +S.euTransferYears || 0;
   const p = policy(design, growth, fav);
   const rows = simulate(p, s);
   return {rows, checks: checks(rows), need: growthNeeded(p, s, repaid)};
@@ -3273,6 +3284,7 @@ function renderAct1() {
   document.querySelectorAll('input[name=deal]').forEach(r => { r.checked = r.value === S.deal; r.disabled = lock; });
   $('euLine').checked = S.euLine; $('euLine').disabled = lock;
   $('promiseGap').value = S.promiseGap; $('promiseGap').disabled = lock;
+  document.querySelectorAll('[data-eut]').forEach(el => { if (document.activeElement !== el) el.value = S[el.dataset.eut]; el.disabled = gameOver(); });
   $('startAct2').disabled = lock || !(passed || att >= 2) || !S.hiddenCase;
   $('startAct2').title = !S.hiddenCase ? 'Set the hidden case in Setup first' : '';
 }
@@ -3332,6 +3344,7 @@ function statsHtml(v) {
     ['Yearly cost, latest year', v.lastRow ? '€' + fmt(v.lastRow.cost) + 'bn' : 'not run'],
     ['Total State debt', v.lastRow ? fmt(v.lastRow.totalDebtPct) + '%' : 'not run'],
     ['Transition borrowing', v.lastRow ? '€' + fmt(v.lastRow.borrowing) + 'bn' : 'not run'],
+    ['EU transfer', +S.euTransfer > 0 && +S.euTransferYears > 0 ? `€${fmt(+S.euTransfer)}bn, years ${S.euTransferStart} to ${+S.euTransferStart + +S.euTransferYears - 1}` : 'none'],
     ['Growth needed to repay in 25 years', v.need === null ? (v.lastRow ? 'above 7%' : 'not run') : fmt(v.need) + '%'],
   ].map(([l, x]) => `<div class="stat"><div class="lab">${l}</div><div class="val">${esc(x)}</div></div>`).join('');
 }
@@ -3421,9 +3434,10 @@ function renderDebrief() {
     [`Growth ${fmt(f.growth + 1)}% instead of ${fmt(f.growth)}%`, {...f, growth: f.growth + 1}],
     [`${f.fav ? 'Adverse' : 'Favourable'} deal instead`, {...f, fav: !f.fav}],
     [`EU budget line ${f.eu ? 'left out' : 'included'}`, {...f, eu: !f.eu}],
+    ...(+S.euTransfer > 0 && +S.euTransferYears > 0 ? [['No EU transfer', {...f, noTransfer: true}]] : []),
     ...CASE_KEYS.filter(c => c !== f.caseKey).map(c => [`${CASE_LABELS[c]} case instead of ${caseName(f.caseKey)}`, {...f, caseKey: c}]),
     ...DESIGNS.filter(d => d !== f.design).map(d => [`${FORMS[d].name} design instead`, {...f, design: d}]),
-  ].map(([label, g]) => { const r = run(g.caseKey, g.design, g.growth, g.fav, g.eu); return [label, r.rows[24].totalDebtPct, r.rows[24].totalDebtPct - b25]; })
+  ].map(([label, g]) => { const keep = S.euTransfer; if (g.noTransfer) S.euTransfer = 0; const r = run(g.caseKey, g.design, g.growth, g.fav, g.eu); S.euTransfer = keep; return [label, r.rows[24].totalDebtPct, r.rows[24].totalDebtPct - b25]; })
    .sort((a, b) => Math.abs(b[2]) - Math.abs(a[2]));
   const max = Math.max(...tests.map(t => Math.abs(t[2])), 1);
   $('sensTable').innerHTML = `<tr><th>Change from the final settings</th><th class="num">Year 25 debt</th><th class="num">Change, points</th><th style="width:34%"></th></tr>` +
@@ -3546,6 +3560,7 @@ $('revealCase').addEventListener('click', () => { S.revealed = true; logChange('
 
 document.addEventListener('change', e => {
   const el = e.target;
+  if (el.dataset.eut) { const k = el.dataset.eut, lim = {euTransfer: [0, 20], euTransferStart: [1, 25], euTransferYears: [0, 25]}[k]; let v = +el.value || 0; if (k !== 'euTransfer') v = Math.round(v); set(k, Math.min(lim[1], Math.max(lim[0], v)), {euTransfer: 'EU transfer, €bn a year', euTransferStart: 'EU transfer, first year', euTransferYears: 'EU transfer, number of years'}[k]); return; }
   if (el.dataset.log !== undefined) { S.log[+el.dataset.log].source = el.value; save(); }
   if (el.dataset.pt === 'guarantees') { S.points.guaranteesKept = el.checked; render(); }
   if (el.dataset.pt === 'obj') { S.points.objective[el.dataset.team] = el.checked; render(); }

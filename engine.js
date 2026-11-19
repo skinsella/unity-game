@@ -1,4 +1,6 @@
-// Copied unchanged from skinsella/ui, zerve/web/engine.js, commit 9fae9f3. Do not edit here. Copy again from the book repository and run tests/check_engine.mjs.
+// Copied from skinsella/ui, zerve/web/engine.js, commit 9fae9f3, with one addition for the game.
+// The addition is a time-limited EU transfer (euTransfer, euTransferStart, euTransferYears). It is zero by default, so the paper's numbers are unchanged.
+// Copy again from the book repository, keep the addition, and run tests/check_engine.mjs.
 // United Ireland fiscal model, version 3.14. JavaScript port of zerve/guided/02 to 06.
 // Checked against the Python notebook by tests/test_guided_model.py. Constant 2023 euros, billions.
 const FX_2023 = 0.86979;
@@ -98,8 +100,9 @@ function simulate(p, s, horizon = 25) {
     const euC = p.counterfactual ? 0 : s.euContributionRate/100*out;
     const euR = p.counterfactual ? 0 : s.euReceipts;
     const behaviour = p.counterfactual ? 0 : s.behaviourReceiptLoss/100*c.grossWelfare;
+    const tStart = s.euTransferStart || 1, euT = (p.counterfactual || t < tStart || t >= tStart + (s.euTransferYears || 0)) ? 0 : (s.euTransfer || 0);
     const primary = p.counterfactual ? (p.shared ? invest : 0)
-      : gap + c.harmonisation + invest + p.duplication - growthTax + euC - euR + behaviour;
+      : gap + c.harmonisation + invest + p.duplication - growthTax + euC - euR - euT + behaviour;
     const rate = s.realInterest + (prevPct === null ? 0 : s.riskPremiumSlope/100*Math.max(0, prevPct - s.riskPremiumThreshold));
     const interest = debt*rate/100, cost = primary + interest;
     debt = Math.max(0, debt + cost); cum += cost;
@@ -107,7 +110,7 @@ function simulate(p, s, horizon = 25) {
     const income = neutral ? cal.gni : cal.gni + out;
     prevPct = 100*(DEBT_RATIOS[cal.debtYear]/100*cal.gni + ctDebt + debt)/income;
     rows.push({year: t, cost, primary, interest, rate, gap, harmonisation: c.harmonisation, investment: invest,
-               administration: p.counterfactual ? 0 : p.duplication, growthTax, euContribution: euC, euReceipts: euR, behaviour, income, republicGni: cal.gni, niOutput: out, ctDebt, borrowing: debt, cumulative: cum, totalDebtPct: prevPct,
+               administration: p.counterfactual ? 0 : p.duplication, growthTax, euContribution: euC, euReceipts: euR, euTransfer: euT, behaviour, income, republicGni: cal.gni, niOutput: out, ctDebt, borrowing: debt, cumulative: cum, totalDebtPct: prevPct,
                costPctGni: 100*cost/cal.gni, burdenLimit: 0.02*cal.gni, costPerResident: cost*1e9/c.roiPopulation});
   }
   return rows;

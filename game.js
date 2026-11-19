@@ -60,6 +60,7 @@ const fresh = () => ({
   stage: 'setup', act2Started: false, support: 5, govFell: null,
   growthBand: 'credible', councilRate: 3.5, eventAdj: 0, boycott: false, broken: 0,
   panel: null, eventSupport: 0, pendingEvent: null, eventsDrawn: [],
+  euTransfer: 0, euTransferStart: 1, euTransferYears: 10,
   turns: [], lastRun: null,
   points: {objective: {}, brief: {}, guaranteesKept: false},
   log: [], tab: 'setup', voteTopic: null,
@@ -89,6 +90,7 @@ function logChange(setting, oldV, newV, results = '') {
 function run(caseKey, design, growth, fav, euOn) {
   const s = {...paperSettings(caseKey)};
   if (!euOn) { s.euContributionRate = 0; s.euReceipts = 0; }
+  s.euTransfer = +S.euTransfer || 0; s.euTransferStart = +S.euTransferStart || 1; s.euTransferYears = +S.euTransferYears || 0;
   const p = policy(design, growth, fav);
   const rows = simulate(p, s);
   return {rows, checks: checks(rows), need: growthNeeded(p, s, repaid)};
@@ -283,6 +285,7 @@ function renderAct1() {
   document.querySelectorAll('input[name=deal]').forEach(r => { r.checked = r.value === S.deal; r.disabled = lock; });
   $('euLine').checked = S.euLine; $('euLine').disabled = lock;
   $('promiseGap').value = S.promiseGap; $('promiseGap').disabled = lock;
+  document.querySelectorAll('[data-eut]').forEach(el => { if (document.activeElement !== el) el.value = S[el.dataset.eut]; el.disabled = gameOver(); });
   $('startAct2').disabled = lock || !(passed || att >= 2) || !S.hiddenCase;
   $('startAct2').title = !S.hiddenCase ? 'Set the hidden case in Setup first' : '';
 }
@@ -342,6 +345,7 @@ function statsHtml(v) {
     ['Yearly cost, latest year', v.lastRow ? '€' + fmt(v.lastRow.cost) + 'bn' : 'not run'],
     ['Total State debt', v.lastRow ? fmt(v.lastRow.totalDebtPct) + '%' : 'not run'],
     ['Transition borrowing', v.lastRow ? '€' + fmt(v.lastRow.borrowing) + 'bn' : 'not run'],
+    ['EU transfer', +S.euTransfer > 0 && +S.euTransferYears > 0 ? `€${fmt(+S.euTransfer)}bn, years ${S.euTransferStart} to ${+S.euTransferStart + +S.euTransferYears - 1}` : 'none'],
     ['Growth needed to repay in 25 years', v.need === null ? (v.lastRow ? 'above 7%' : 'not run') : fmt(v.need) + '%'],
   ].map(([l, x]) => `<div class="stat"><div class="lab">${l}</div><div class="val">${esc(x)}</div></div>`).join('');
 }
@@ -431,9 +435,10 @@ function renderDebrief() {
     [`Growth ${fmt(f.growth + 1)}% instead of ${fmt(f.growth)}%`, {...f, growth: f.growth + 1}],
     [`${f.fav ? 'Adverse' : 'Favourable'} deal instead`, {...f, fav: !f.fav}],
     [`EU budget line ${f.eu ? 'left out' : 'included'}`, {...f, eu: !f.eu}],
+    ...(+S.euTransfer > 0 && +S.euTransferYears > 0 ? [['No EU transfer', {...f, noTransfer: true}]] : []),
     ...CASE_KEYS.filter(c => c !== f.caseKey).map(c => [`${CASE_LABELS[c]} case instead of ${caseName(f.caseKey)}`, {...f, caseKey: c}]),
     ...DESIGNS.filter(d => d !== f.design).map(d => [`${FORMS[d].name} design instead`, {...f, design: d}]),
-  ].map(([label, g]) => { const r = run(g.caseKey, g.design, g.growth, g.fav, g.eu); return [label, r.rows[24].totalDebtPct, r.rows[24].totalDebtPct - b25]; })
+  ].map(([label, g]) => { const keep = S.euTransfer; if (g.noTransfer) S.euTransfer = 0; const r = run(g.caseKey, g.design, g.growth, g.fav, g.eu); S.euTransfer = keep; return [label, r.rows[24].totalDebtPct, r.rows[24].totalDebtPct - b25]; })
    .sort((a, b) => Math.abs(b[2]) - Math.abs(a[2]));
   const max = Math.max(...tests.map(t => Math.abs(t[2])), 1);
   $('sensTable').innerHTML = `<tr><th>Change from the final settings</th><th class="num">Year 25 debt</th><th class="num">Change, points</th><th style="width:34%"></th></tr>` +
@@ -556,6 +561,7 @@ $('revealCase').addEventListener('click', () => { S.revealed = true; logChange('
 
 document.addEventListener('change', e => {
   const el = e.target;
+  if (el.dataset.eut) { const k = el.dataset.eut, lim = {euTransfer: [0, 20], euTransferStart: [1, 25], euTransferYears: [0, 25]}[k]; let v = +el.value || 0; if (k !== 'euTransfer') v = Math.round(v); set(k, Math.min(lim[1], Math.max(lim[0], v)), {euTransfer: 'EU transfer, €bn a year', euTransferStart: 'EU transfer, first year', euTransferYears: 'EU transfer, number of years'}[k]); return; }
   if (el.dataset.log !== undefined) { S.log[+el.dataset.log].source = el.value; save(); }
   if (el.dataset.pt === 'guarantees') { S.points.guaranteesKept = el.checked; render(); }
   if (el.dataset.pt === 'obj') { S.points.objective[el.dataset.team] = el.checked; render(); }

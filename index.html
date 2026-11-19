@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Price of Unity, game console</title>
 <meta name="description" content="Game console for The Price of Unity, a classroom simulation built on the United Ireland fiscal model.">
-<link rel="stylesheet" href="style.css?v=202611191123">
+<link rel="stylesheet" href="style.css?v=202611191130">
 </head>
 <body>
 <div class="wrap">
@@ -144,6 +144,11 @@
           <label class="check"><input type="radio" name="deal" value="adv"> Adverse, Dublin takes both. This applies if talks end without agreement</label>
         </div>
         <label class="check"><input type="checkbox" id="euLine"> EU budget line included, meaning Ireland's EU contribution on Northern Ireland output and CAP direct payments</label>
+        <div class="field" style="margin-top:12px">
+          <span class="lab">EU transfer to the Exchequer</span>
+          <div class="inline small">€<input type="number" data-eut="euTransfer" min="0" max="20" step="0.5" style="width:80px">bn a year, from year <input type="number" data-eut="euTransferStart" min="1" max="25" step="1" style="width:66px"> for <input type="number" data-eut="euTransferYears" min="0" max="25" step="1" style="width:66px"> years</div>
+          <span class="hint">In 2023 euros. Set to 0 for no transfer. This is a classroom setting, not an estimate of what the EU would pay.</span>
+        </div>
         <div class="field" style="margin-top:10px">
           <label for="promiseGap">Prospectus promises the final terms do not deliver</label>
           <input type="number" id="promiseGap" min="0" max="5" step="1" style="width:90px">
@@ -201,6 +206,7 @@
           <label class="check"><input type="radio" name="deal2" value="fav"> Favourable deal</label>
           <label class="check"><input type="radio" name="deal2" value="adv"> Adverse deal</label>
           <label class="check"><input type="checkbox" id="euLine2"> EU budget line included</label>
+          <div class="inline small" style="margin-top:6px">EU transfer €<input type="number" data-eut="euTransfer" min="0" max="20" step="0.5" style="width:74px">bn a year, from year <input type="number" data-eut="euTransferStart" min="1" max="25" step="1" style="width:60px"> for <input type="number" data-eut="euTransferYears" min="0" max="25" step="1" style="width:60px"> years</div>
         </div>
         <div class="btns"><button class="act" id="runTurn">Run the model</button></div>
       </div>
@@ -304,15 +310,15 @@
 </section>
 
 <footer>
-  Figures are illustrative scenarios from the United Ireland fiscal model, version 3.14, in constant 2023 euros. They are not forecasts. The growth bands above 2%, the support meter and the event cards are classroom rules, not model results. Model by Stephen Kinsella, University of Limerick.
+  Figures are illustrative scenarios from the United Ireland fiscal model, version 3.14, in constant 2023 euros. They are not forecasts. The growth bands above 2%, the EU transfer, the support meter and the event cards are classroom rules, not model results. Model by Stephen Kinsella, University of Limerick.
   <span class="deskonly onlineonly"> <a href="offline/price_of_unity_offline.html" download>Download the offline copy</a> for use without Wi-Fi.</span>
 </footer>
 </div>
 
-<script src="engine.js?v=202611191123"></script>
-<script src="vendor/qrcode.js?v=202611191123"></script>
-<script src="livevote.js?v=202611191123"></script>
-<script src="paper_values.js?v=202611191123"></script>
-<script src="game.js?v=202611191123"></script>
+<script src="engine.js?v=202611191130"></script>
+<script src="vendor/qrcode.js?v=202611191130"></script>
+<script src="livevote.js?v=202611191130"></script>
+<script src="paper_values.js?v=202611191130"></script>
+<script src="game.js?v=202611191130"></script>
 </body>
 </html>

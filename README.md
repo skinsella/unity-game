@@ -41,11 +41,13 @@ The model decides the costs, the debt path and the three fiscal checks. The desi
 
 The growth bands above 2%, the support meter, the boycott rule and the event cards are classroom rules. The year of unity and the choice to hold the deficit share steady until unity are recorded but do not change the figures, because the public model has no setting for them.
 
+The game adds one setting to the engine, an EU transfer of a chosen amount each year, from a chosen first year, for a chosen number of years. It cuts that year's cost before borrowing, so interest and debt follow from it. It is zero by default and is a classroom setting, not an estimate of what the EU would pay.
+
 The model's benefit channels for a UK payment, EU funding, trade, investment and integration are left out. They need sourced sizes before they can be used.
 
 ## Keeping the engine honest
 
-engine.js is copied unchanged from the book repository. The page checks it against all 96 published numbers in paper version 3.14 each time it opens, and the same check runs on every push.
+engine.js is copied from the book repository, with the EU transfer as its only addition. The page checks it against all 96 published numbers in paper version 3.14 each time it opens, and the same check runs on every push.
 
 To update the engine, copy the new engine.js and the published values from the book repository, then run this.
 
