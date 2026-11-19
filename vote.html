@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vote, The Price of Unity</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { font-size: 18px }
+  .wrap { max-width: 520px; padding-top: 28px }
+  h1 { font-size: 30px; margin-bottom: 18px }
+  .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 22px }
+  .choice button { font: 600 18px var(--body); padding: 18px 10px; border-radius: 10px; border: 2px solid var(--rule);
+    background: var(--surface); color: var(--ink); cursor: pointer; min-height: 72px }
+  .choice button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #fff }
+  .answer button { font-size: 22px; min-height: 84px }
+  .done { text-align: center; padding: 30px 10px }
+  .done .big { font-size: 26px; margin-bottom: 10px; font-family: var(--display) }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">The Price of Unity</div>
+  <div id="form">
+    <h1>Do you support reunification?</h1>
+    <h3>Where do you vote?</h3>
+    <div class="choice" id="region">
+      <button type="button" data-v="ni" aria-pressed="false">Northern Ireland</button>
+      <button type="button" data-v="south" aria-pressed="false">Southern Ireland</button>
+    </div>
+    <h3>Your answer</h3>
+    <div class="choice answer" id="answer">
+      <button type="button" data-v="yes" disabled>Yes</button>
+      <button type="button" data-v="no" disabled>No</button>
+    </div>
+    <p class="hint" id="msg">Choose where you vote first.</p>
+  </div>
+  <div id="done" class="done" hidden>
+    <div class="big">Thank you, your vote is in.</div>
+    <p class="muted" id="doneText"></p>
+    <button class="sec" id="change">Change my vote</button>
+  </div>
+  <div id="none" hidden><h1>Scan the QR code on the screen</h1><p>This page needs the code from the room screen to know which vote you are joining.</p></div>
+</div>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search);
+  const topic = q.get('s'), relay = (q.get('relay') || 'https://ntfy.sh').replace(/\/$/, '');
+  const $ = id => document.getElementById(id);
+  if (!topic || !/^[-_A-Za-z0-9]{8,64}$/.test(topic)) { $('form').hidden = true; $('none').hidden = false; return; }
+  const key = 'pou-voter-' + topic;
+  let voter = null;
+  try { voter = localStorage.getItem(key); } catch (e) {}
+  if (!voter) {
+    const a = new Uint32Array(3); crypto.getRandomValues(a); voter = Array.from(a, x => x.toString(36)).join('');
+    try { localStorage.setItem(key, voter); } catch (e) {}
+  }
+  let region = null;
+  const names = {ni: 'Northern Ireland', south: 'Southern Ireland', yes: 'Yes', no: 'No'};
+  $('region').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    region = b.dataset.v;
+    document.querySelectorAll('#region button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    document.querySelectorAll('#answer button').forEach(x => x.disabled = false);
+    $('msg').textContent = 'Now tap Yes or No.';
+  });
+  $('answer').addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b || !region) return;
+    document.querySelectorAll('#answer button').forEach(x => x.disabled = true);
+    $('msg').textContent = 'Sending your vote.';
+    try {
+      const r = await fetch(`${relay}/${topic}`, {method: 'POST', body: JSON.stringify({v: 1, voter, region, answer: b.dataset.v})});
+      if (!r.ok) throw new Error(r.status);
+      $('form').hidden = true; $('done').hidden = false;
+      $('doneText').textContent = `You voted ${names[b.dataset.v]} in the ${names[region]} poll.`;
+    } catch (err) {
+      $('msg').textContent = 'Your vote did not send. Check your connection and tap again.';
+      document.querySelectorAll('#answer button').forEach(x => x.disabled = false);
+    }
+  });
+  $('change').addEventListener('click', () => { $('done').hidden = true; $('form').hidden = false; $('msg').textContent = 'Your new vote replaces the old one.'; document.querySelectorAll('#answer button').forEach(x => x.disabled = !region); });
+})();
+</script>
+</body>
+</html>

@@ -15,7 +15,7 @@ def build():
                  lambda m: 'url(data:font/woff2;base64,' + base64.b64encode((here / 'fonts' / m.group(1)).read_bytes()).decode() + ')', css)
     page = (here / 'index.html').read_text()
     page = page.replace('<link rel="stylesheet" href="style.css">', '<style>\n' + css + '\n</style>')
-    for name in ('engine.js', 'paper_values.js', 'game.js'):
+    for name in ('engine.js', 'vendor/qrcode.js', 'livevote.js', 'paper_values.js', 'game.js'):
         page = page.replace(f'<script src="{name}"></script>', '<script>\n' + (here / name).read_text() + '\n</script>')
     page = re.sub(r'\s*<span class="deskonly onlineonly">.*?</span>', '', page, flags=re.S)
     return page.replace('<head>', '<head>\n<!-- Offline copy of the game console. Built by build_offline.py, do not edit by hand. -->', 1)

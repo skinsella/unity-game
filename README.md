@@ -23,6 +23,12 @@ The page keeps the game in the browser as it goes. Export the game file at the b
 
 The button at the top opens a second window for the projector. It shows the turn, the clock, the charts, the event card and the scoreboard in large type, with no controls. It follows the desk window on the same laptop as each change is made, with no server.
 
+## The live vote
+
+The Live vote tab shows a QR code that students scan to vote on their phones. They choose Northern Ireland or Southern Ireland, answer the question "Do you support reunification?", and the results appear as bars on the console and the room screen.
+
+Votes travel through ntfy.sh, a free public message relay that needs no accounts. Each vote gets its own random code, and the page counts only the latest vote from each phone.
+
 ## The range across the four cases
 
 Nobody in the room knows which harmonisation case is true. In Act One the Fiscal Council's costing includes a shaded band for total debt across all four cases, on both deals.

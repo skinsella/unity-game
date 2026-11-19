@@ -24,6 +24,7 @@
   <button role="tab" data-tab="score">Scoreboard</button>
   <button role="tab" data-tab="log">Change log</button>
   <button role="tab" data-tab="debrief">Debrief</button>
+  <button role="tab" data-tab="vote">Live vote</button>
 </nav>
 
 <div id="verify" class="banner deskonly"></div>
@@ -282,6 +283,17 @@
   </div>
 </section>
 
+<!-- ============================== LIVE VOTE -->
+<section data-panel="vote" hidden>
+  <div class="card">
+    <div class="inline" style="justify-content:space-between">
+      <p class="muted" style="margin:0">Students scan the code and vote on their phones. While this tab is open, the room screen shows the code and the results too.</p>
+      <button class="act" id="newVote">Start a new vote</button>
+    </div>
+  </div>
+  <div class="card"><div id="voteBox"></div></div>
+</section>
+
 <!-- ============================== ROOM SCREEN -->
 <section data-panel="room" hidden>
   <div class="roomtop">
@@ -298,6 +310,8 @@
 </div>
 
 <script src="engine.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="livevote.js"></script>
 <script src="paper_values.js"></script>
 <script src="game.js"></script>
 </body>

@@ -62,7 +62,7 @@ const fresh = () => ({
   panel: null, eventSupport: 0, pendingEvent: null, eventsDrawn: [],
   turns: [], lastRun: null,
   points: {objective: {}, brief: {}, guaranteesKept: false},
-  log: [], tab: 'setup',
+  log: [], tab: 'setup', voteTopic: null,
 });
 let S = load() || fresh();
 const ROOM = new URLSearchParams(location.search).get('view') === 'room';
@@ -172,6 +172,7 @@ function render() {
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === S.tab)));
   document.querySelectorAll('section[data-panel]').forEach(p => p.hidden = p.dataset.panel !== S.tab);
   renderStatus(); renderSetup(); renderAct1(); renderAct2(); renderScore(); renderLog(); renderDebrief();
+  if (S.tab === 'vote' && window.LiveVote) LiveVote.show($('voteBox'), S.voteTopic);
   save();
 }
 
@@ -190,6 +191,11 @@ function legend(items) {
 function renderRoom() {
   document.querySelectorAll('section[data-panel]').forEach(p => p.hidden = p.dataset.panel !== 'room');
   const body = $('roomBody'), act2 = S.act2Started;
+  if (S.tab === 'vote' && S.voteTopic && window.LiveVote) {
+    $('roomTimer').hidden = true; $('roomTitle').textContent = 'Live vote';
+    const box = document.createElement('div'); box.className = 'card'; body.replaceChildren(box);
+    LiveVote.show(box, S.voteTopic); return;
+  }
   $('roomTimer').hidden = !act2 || gameOver();
   if (!act2) {
     $('roomTitle').textContent = S.polls.some(p => p.passed) ? 'Act One, unity approved' : 'Act One, the lead-up';
@@ -449,6 +455,7 @@ function set(key, value, label, shown) {
 const yesNo = v => v ? 'Yes' : 'No';
 const dealName = v => v === 'fav' ? 'Favourable' : 'Adverse';
 
+$('newVote').addEventListener('click', () => { S.voteTopic = LiveVote.newTopic(); logChange('Live vote', '', 'new vote started'); render(); });
 $('openRoom').addEventListener('click', () => window.open(location.pathname + '?view=room', 'price-of-unity-room'));
 if (channel) channel.onmessage = e => {
   const m = e.data || {};

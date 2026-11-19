@@ -114,6 +114,27 @@ footer { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--rule);
 .legend i.band { width: 18px; height: 10px; border: 0; vertical-align: middle }
 a { color: var(--accent) }
 
+/* Live vote */
+.votegrid { display: grid; grid-template-columns: minmax(220px, 360px) minmax(0, 1fr); gap: 28px; align-items: start }
+@media (max-width: 800px) { .votegrid { grid-template-columns: 1fr } }
+.qr { background: #fff; padding: 10px; border-radius: 8px }
+.qr svg { width: 100%; height: auto; display: block }
+.qrurl { word-break: break-all; margin-top: 6px }
+.vq { font-size: 30px; margin-bottom: 8px }
+.vbar { margin: 16px 0 }
+.vlab { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 5px }
+.vlab span, .vcount { color: var(--muted); font-size: 13.5px }
+.vtrack { display: flex; height: 44px; border-radius: 6px; overflow: hidden; background: var(--bg); border: 1px solid var(--rule) }
+.vyes, .vno { display: flex; align-items: center; padding: 0 10px; color: #fff; font: 600 15px var(--body); white-space: nowrap; overflow: hidden; transition: width .4s }
+.vyes { background: var(--accent) }
+.vno { background: var(--debt); justify-content: flex-end }
+.vempty { padding: 12px; color: var(--muted); font-size: 14px }
+.vcount { margin-top: 4px }
+.vresult { font-weight: 600; margin-top: 14px }
+body.room .vq { font-size: 40px }
+body.room .vtrack { height: 60px }
+body.room .vyes, body.room .vno { font-size: 20px }
+
 /* Room screen, shown on the projector */
 body.room .deskonly { display: none !important }
 body.room { font-size: 19px }
