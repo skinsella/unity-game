@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Change the code yourself
+    url: https://github.com/skinsella/unity-game/blob/main/CONTRIBUTING.md
+    about: A step-by-step guide to editing the game and sending a pull request.

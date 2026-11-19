@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Price of Unity, game console</title>
 <meta name="description" content="Game console for The Price of Unity, a classroom simulation built on the United Ireland fiscal model.">
-<link rel="stylesheet" href="style.css?v=202611191130">
+<link rel="stylesheet" href="style.css?v=202611191327">
 </head>
 <body>
 <div class="wrap">
@@ -25,6 +25,7 @@
   <button role="tab" data-tab="log">Change log</button>
   <button role="tab" data-tab="debrief">Debrief</button>
   <button role="tab" data-tab="vote">Live vote</button>
+  <button role="tab" data-tab="feedback">Feedback</button>
 </nav>
 
 <div id="verify" class="banner deskonly"></div>
@@ -300,6 +301,34 @@
   <div class="card"><div id="voteBox"></div></div>
 </section>
 
+<!-- ============================== FEEDBACK -->
+<section data-panel="feedback" hidden>
+  <div class="card">
+    <h2>Help us improve the game</h2>
+    <p>Scan a code to open a short form on GitHub. You need a free GitHub account, and your answers are public, so leave out anything personal.</p>
+  </div>
+  <div class="cols">
+    <div class="card fbcard">
+      <h3>Feedback on the session</h3>
+      <p class="small muted">What worked, what did not, and one rule you would change.</p>
+      <div class="qr" id="qrFeedback"></div>
+      <p><a id="linkFeedback" target="_blank" rel="noopener">Open the feedback form</a></p>
+    </div>
+    <div class="card fbcard">
+      <h3>Change the game</h3>
+      <p class="small muted">Describe a change in plain words. If Stephen approves it, Claude builds it and the checks test it before it goes live.</p>
+      <div class="qr" id="qrChange"></div>
+      <p><a id="linkChange" target="_blank" rel="noopener">Open the change form</a></p>
+    </div>
+    <div class="card fbcard">
+      <h3>Change the code yourself</h3>
+      <p class="small muted">Copy the repository, edit the game, run the checks and send a pull request.</p>
+      <div class="qr" id="qrCode"></div>
+      <p><a id="linkCode" target="_blank" rel="noopener">Read the guide</a></p>
+    </div>
+  </div>
+</section>
+
 <!-- ============================== ROOM SCREEN -->
 <section data-panel="room" hidden>
   <div class="roomtop">
@@ -315,10 +344,10 @@
 </footer>
 </div>
 
-<script src="engine.js?v=202611191130"></script>
-<script src="vendor/qrcode.js?v=202611191130"></script>
-<script src="livevote.js?v=202611191130"></script>
-<script src="paper_values.js?v=202611191130"></script>
-<script src="game.js?v=202611191130"></script>
+<script src="engine.js?v=202611191327"></script>
+<script src="vendor/qrcode.js?v=202611191327"></script>
+<script src="livevote.js?v=202611191327"></script>
+<script src="paper_values.js?v=202611191327"></script>
+<script src="game.js?v=202611191327"></script>
 </body>
 </html>

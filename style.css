@@ -114,6 +114,9 @@ footer { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--rule);
 .legend i.band { width: 18px; height: 10px; border: 0; vertical-align: middle }
 a { color: var(--accent) }
 
+/* Feedback */
+.fbcard .qr { max-width: 240px; margin: 10px 0 }
+
 /* Live vote */
 .votegrid { display: grid; grid-template-columns: minmax(220px, 360px) minmax(0, 1fr); gap: 28px; align-items: start }
 @media (max-width: 800px) { .votegrid { grid-template-columns: 1fr } }

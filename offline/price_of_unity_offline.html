@@ -123,6 +123,9 @@ footer { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--rule);
 .legend i.band { width: 18px; height: 10px; border: 0; vertical-align: middle }
 a { color: var(--accent) }
 
+/* Feedback */
+.fbcard .qr { max-width: 240px; margin: 10px 0 }
+
 /* Live vote */
 .votegrid { display: grid; grid-template-columns: minmax(220px, 360px) minmax(0, 1fr); gap: 28px; align-items: start }
 @media (max-width: 800px) { .votegrid { grid-template-columns: 1fr } }
@@ -185,6 +188,7 @@ body.room footer { font-size: 14px }
   <button role="tab" data-tab="log">Change log</button>
   <button role="tab" data-tab="debrief">Debrief</button>
   <button role="tab" data-tab="vote">Live vote</button>
+  <button role="tab" data-tab="feedback">Feedback</button>
 </nav>
 
 <div id="verify" class="banner deskonly"></div>
@@ -458,6 +462,34 @@ body.room footer { font-size: 14px }
     </div>
   </div>
   <div class="card"><div id="voteBox"></div></div>
+</section>
+
+<!-- ============================== FEEDBACK -->
+<section data-panel="feedback" hidden>
+  <div class="card">
+    <h2>Help us improve the game</h2>
+    <p>Scan a code to open a short form on GitHub. You need a free GitHub account, and your answers are public, so leave out anything personal.</p>
+  </div>
+  <div class="cols">
+    <div class="card fbcard">
+      <h3>Feedback on the session</h3>
+      <p class="small muted">What worked, what did not, and one rule you would change.</p>
+      <div class="qr" id="qrFeedback"></div>
+      <p><a id="linkFeedback" target="_blank" rel="noopener">Open the feedback form</a></p>
+    </div>
+    <div class="card fbcard">
+      <h3>Change the game</h3>
+      <p class="small muted">Describe a change in plain words. If Stephen approves it, Claude builds it and the checks test it before it goes live.</p>
+      <div class="qr" id="qrChange"></div>
+      <p><a id="linkChange" target="_blank" rel="noopener">Open the change form</a></p>
+    </div>
+    <div class="card fbcard">
+      <h3>Change the code yourself</h3>
+      <p class="small muted">Copy the repository, edit the game, run the checks and send a pull request.</p>
+      <div class="qr" id="qrCode"></div>
+      <p><a id="linkCode" target="_blank" rel="noopener">Read the guide</a></p>
+    </div>
+  </div>
 </section>
 
 <!-- ============================== ROOM SCREEN -->
@@ -3174,6 +3206,7 @@ function render() {
   document.querySelectorAll('section[data-panel]').forEach(p => p.hidden = p.dataset.panel !== S.tab);
   renderStatus(); renderSetup(); renderAct1(); renderAct2(); renderScore(); renderLog(); renderDebrief();
   if (S.tab === 'vote' && window.LiveVote) LiveVote.show($('voteBox'), S.voteTopic);
+  if (S.tab === 'feedback') renderFeedback();
   save();
 }
 
@@ -3235,6 +3268,16 @@ function renderRoom() {
         <svg class="chart" id="roomDebt" viewBox="0 0 640 260"></svg></figure>
     </div>${ev}`;
   drawAct2Charts($('roomCost'), $('roomDebt'), v);
+}
+
+const REPO = 'https://github.com/skinsella/unity-game';
+const FEEDBACK_LINKS = {Feedback: `${REPO}/issues/new?template=feedback.yml`, Change: `${REPO}/issues/new?template=change.yml`, Code: `${REPO}/blob/main/CONTRIBUTING.md`};
+function renderFeedback() {
+  for (const [k, url] of Object.entries(FEEDBACK_LINKS)) {
+    $('link' + k).href = url;
+    const box = $('qr' + k);
+    if (!box.firstChild && window.qrcode) { const q = qrcode(0, 'M'); q.addData(url); q.make(); box.innerHTML = q.createSvgTag({cellSize: 6, margin: 2, scalable: true}); }
+  }
 }
 
 function renderSetup() {

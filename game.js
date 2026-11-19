@@ -175,6 +175,7 @@ function render() {
   document.querySelectorAll('section[data-panel]').forEach(p => p.hidden = p.dataset.panel !== S.tab);
   renderStatus(); renderSetup(); renderAct1(); renderAct2(); renderScore(); renderLog(); renderDebrief();
   if (S.tab === 'vote' && window.LiveVote) LiveVote.show($('voteBox'), S.voteTopic);
+  if (S.tab === 'feedback') renderFeedback();
   save();
 }
 
@@ -236,6 +237,16 @@ function renderRoom() {
         <svg class="chart" id="roomDebt" viewBox="0 0 640 260"></svg></figure>
     </div>${ev}`;
   drawAct2Charts($('roomCost'), $('roomDebt'), v);
+}
+
+const REPO = 'https://github.com/skinsella/unity-game';
+const FEEDBACK_LINKS = {Feedback: `${REPO}/issues/new?template=feedback.yml`, Change: `${REPO}/issues/new?template=change.yml`, Code: `${REPO}/blob/main/CONTRIBUTING.md`};
+function renderFeedback() {
+  for (const [k, url] of Object.entries(FEEDBACK_LINKS)) {
+    $('link' + k).href = url;
+    const box = $('qr' + k);
+    if (!box.firstChild && window.qrcode) { const q = qrcode(0, 'M'); q.addData(url); q.make(); box.innerHTML = q.createSvgTag({cellSize: 6, margin: 2, scalable: true}); }
+  }
 }
 
 function renderSetup() {

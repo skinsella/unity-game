@@ -45,6 +45,14 @@ The game adds one setting to the engine, an EU transfer of a chosen amount each 
 
 The model's benefit channels for a UK payment, EU funding, trade, investment and integration are left out. They need sourced sizes before they can be used.
 
+## Feedback and student changes
+
+The Feedback tab shows QR codes for two GitHub forms, one for feedback on the session and one to suggest a change to the game. Students can also copy the repository and send their own pull request, following CONTRIBUTING.md.
+
+When Stephen adds the label build-this to a change request, Claude builds it on a new branch and comments on the issue. This needs the Claude GitHub App and an ANTHROPIC_API_KEY secret, and stays switched off until both are in place. Only people with write access can trigger it, so student requests cost nothing until Stephen approves them.
+
+Every change runs the same checks. They confirm the model numbers, check the model files are unchanged, check the offline copy and play a short game in a hidden browser.
+
 ## Keeping the engine honest
 
 engine.js is copied from the book repository, with the EU transfer as its only addition. The page checks it against all 96 published numbers in paper version 3.14 each time it opens, and the same check runs on every push.

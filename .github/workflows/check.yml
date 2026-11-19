@@ -12,7 +12,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Engine reproduces paper version 3.14
         run: node tests/check_engine.mjs
+      - name: Model files are unchanged
+        run: sha256sum -c tests/engine.sha256
       - name: Offline copy matches the page
         run: python3 build_offline.py --check
+      - name: Install the browser test tools
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Play a short game
+        run: python3 tests/smoke.py

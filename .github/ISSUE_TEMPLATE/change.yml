@@ -1,0 +1,42 @@
+name: Change the game
+description: Suggest a change to the rules, the cards, the console or the room screen.
+title: "Change: "
+labels: ["change-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the change in plain words. Stephen reads every request, and he can ask Claude to build the ones he approves as a pull request.
+        The model's published numbers stay fixed, so ask for changes to how the game is played, not to the economics model itself.
+  - type: dropdown
+    id: area
+    attributes:
+      label: What part of the game is it about?
+      options:
+        - The rules or the turn structure
+        - Event cards, campaign cards or role cards
+        - The console on the laptop
+        - The room screen
+        - The live vote
+        - The scoreboard or the points
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: What should change?
+      description: Be specific. For example, make the decision phase eight minutes instead of six.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would this make the game better?
+    validations:
+      required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: How would we know it worked?
+      description: What should someone see on screen or in class once the change is made?

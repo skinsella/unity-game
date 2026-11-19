@@ -1,0 +1,51 @@
+name: Feedback on the session
+description: Tell us what worked and what did not in The Price of Unity.
+title: "Feedback: "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for playing. Your answers are public on GitHub, so please do not include anything personal.
+  - type: dropdown
+    id: team
+    attributes:
+      label: Which team were you on?
+      options:
+        - Irish Government
+        - Pro-unity campaign, Northern Ireland
+        - Pro-union campaign, Northern Ireland
+        - UK Treasury
+        - European Commission
+        - Fiscal Council
+        - Citizens' Panel
+        - Simulator desk
+    validations:
+      required: true
+  - type: dropdown
+    id: rating
+    attributes:
+      label: How useful was the session for learning economics?
+      options:
+        - 5, very useful
+        - 4
+        - 3
+        - 2
+        - 1, not useful
+    validations:
+      required: true
+  - type: textarea
+    id: worked
+    attributes:
+      label: What worked well?
+    validations:
+      required: true
+  - type: textarea
+    id: failed
+    attributes:
+      label: What did not work?
+    validations:
+      required: true
+  - type: textarea
+    id: rule
+    attributes:
+      label: If you could change one rule, what would it be?
