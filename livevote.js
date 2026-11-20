@@ -1,5 +1,5 @@
 // Live vote by QR code. Phones send votes to a public message relay, ntfy.sh, under a random topic for this vote.
-// The console and the room screen each listen to that topic and count the latest vote from each phone.
+// The console and the room screen each listen to that topic and count the first region choice from each phone.
 (() => {
 'use strict';
 const q = new URLSearchParams(location.search);
@@ -21,9 +21,8 @@ function listen(t) {
       if (m.event !== 'message' || seen.has(m.id)) return;
       seen.add(m.id);
       let v; try { v = JSON.parse(m.message); } catch (err) { return; }
-      if (!v || !v.voter || !['ni', 'south'].includes(v.region) || !['yes', 'no'].includes(v.answer)) return;
-      const old = votes.get(v.voter);
-      if (!old || old.time <= m.time) votes.set(v.voter, {region: v.region, answer: v.answer, time: m.time});
+      if (!v || !v.voter || !['ni', 'south'].includes(v.region)) return;
+      if (!votes.has(v.voter)) votes.set(v.voter, v.region);
       status = 'live'; redraw();
     };
   } catch (err) { status = 'unavailable'; }
@@ -31,8 +30,8 @@ function listen(t) {
 }
 
 function tally() {
-  const t = {ni: {yes: 0, no: 0}, south: {yes: 0, no: 0}};
-  for (const v of votes.values()) t[v.region][v.answer]++;
+  const t = {ni: 0, south: 0};
+  for (const region of votes.values()) t[region]++;
   return t;
 }
 
@@ -46,26 +45,23 @@ function qrSvg(text) {
   return qr.createSvgTag({cellSize: 6, margin: 2, scalable: true});
 }
 
-function bar(label, c) {
-  const n = c.yes + c.no, y = n ? 100*c.yes/n : 0;
-  return `<div class="vbar"><div class="vlab"><b>${label}</b><span>${n} ${n === 1 ? 'vote' : 'votes'}</span></div>
-    <div class="vtrack">${n ? (c.yes ? `<div class="vyes" style="width:${y}%">Yes ${Math.round(y)}%</div>` : '') + (c.no ? `<div class="vno" style="width:${100 - y}%">No ${Math.round(100 - y)}%</div>` : '') : '<div class="vempty">No votes yet</div>'}</div>
-    <div class="vcount">${c.yes} yes, ${c.no} no</div></div>`;
+function bar(label, count, total, wholeRoom = false) {
+  const share = total ? Math.round(100 * count / total) : 0;
+  return `<div class="vbar"><div class="vlab"><b>${label}</b><span>${count} ${count === 1 ? 'vote' : 'votes'}</span></div>
+    <div class="vtrack">${count ? `<div class="vregion" style="width:${wholeRoom ? 100 : share}%"></div>` : '<div class="vempty">No votes yet</div>'}</div>
+    <div class="vcount">${wholeRoom ? `${count} total votes` : `${share}% of submissions`}</div></div>`;
 }
 
 function html() {
   if (!topic) return '<p class="muted">Start a vote to show the QR code.</p>';
-  const t = tally(), all = {yes: t.ni.yes + t.south.yes, no: t.ni.no + t.south.no};
-  const both = t.ni.yes > t.ni.no && t.south.yes > t.south.no;
-  const any = all.yes + all.no > 0;
+  const t = tally(), all = t.ni + t.south;
   const st = {live: ['pass', 'Live'], connecting: ['wait', 'Connecting'], reconnecting: ['fail', 'Reconnecting'], unavailable: ['fail', 'Relay unavailable'], idle: ['wait', 'Idle']}[status];
   return `<div class="votegrid">
     <div class="qrbox"><div class="qr">${qrSvg(voteUrl(topic))}</div><p class="small muted qrurl">${voteUrl(topic).replace(/^https?:\/\//, '').replace(/&relay=.*/, '')}</p></div>
     <div>
-      <h2 class="vq">Do you support reunification?</h2>
-      <p><span class="pill ${st[0]}">${st[1]}</span> <span class="muted">${all.yes + all.no} phones have voted</span></p>
-      ${bar('Northern Ireland', t.ni)}${bar('Southern Ireland', t.south)}${bar('Whole room', all)}
-      ${any ? `<p class="vresult">${both ? 'A majority says yes in both polls.' : 'There is not a yes majority in both polls.'} A tie counts as a no.</p>` : ''}
+      <h2 class="vq">Where do people vote?</h2>
+      <p><span class="pill ${st[0]}">${st[1]}</span> <span class="muted">${all} ${all === 1 ? 'phone has' : 'phones have'} voted</span></p>
+      ${bar('Northern Ireland', t.ni, all)}${bar('Southern Ireland', t.south, all)}${bar('Whole room', all, all, true)}
     </div></div>`;
 }
 
